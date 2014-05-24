@@ -124,3 +124,6 @@ grails {
         }
     }
 }
+
+grails.resources.mappers.handlebars.templatesRoot = "templates"
+grails.resources.mappers.handlebars.templateExtension = ".hbs"
