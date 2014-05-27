@@ -2,6 +2,7 @@ package hipsteroid
 
 import asset.pipeline.grails.AssetResourceLocator
 import grails.compiler.GrailsCompileStatic
+import groovy.json.JsonBuilder
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.codehaus.groovy.grails.plugins.support.aware.GrailsApplicationAware
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,7 +25,7 @@ class HandlebarsService implements GrailsApplicationAware {
 
   GrailsApplication grailsApplication
 
-  private ScriptEngine scriptEngine
+  private ScriptEngine engine
   private String templatesRoot
 
   /**
@@ -38,8 +39,19 @@ class HandlebarsService implements GrailsApplicationAware {
   @GrailsCompileStatic
   String render(String template, Map model) {
     loadScript "${templatesRoot}/${template}.js"
-    def handlebarsTemplates = scriptEngine.eval("Handlebars.templates")
-    (scriptEngine as Invocable).invokeMethod(handlebarsTemplates, template, model)
+    def handlebarsTemplates = engine.eval("Handlebars.templates")
+    (engine as Invocable).invokeMethod(handlebarsTemplates, template, convertParameters(model))
+  }
+
+  @GrailsCompileStatic
+  def convertParameters(Map model) {
+    if (engine.getClass().simpleName == "NashornScriptEngine") {
+      model
+    } else {
+      def json = engine.eval("JSON")
+      def jsonStr = new JsonBuilder(model).toString()
+      (engine as Invocable).invokeMethod(json, "parse", jsonStr)
+    }
   }
 
   @PostConstruct
@@ -47,7 +59,7 @@ class HandlebarsService implements GrailsApplicationAware {
     templatesRoot = grailsApplication.config.assets.handlebars.templateRoot ?: "templates"
 
     def engineManager = new ScriptEngineManager()
-    scriptEngine = engineManager.getEngineByName("nashorn")
+    engine = engineManager.getEngineByName("javascript")
     loadScript "handlebars.js"
   }
 
@@ -55,7 +67,7 @@ class HandlebarsService implements GrailsApplicationAware {
   private void loadScript(String uri) {
     def resource = assetResourceLocator.findResourceForURI(uri)
     resource.inputStream.withReader { Reader reader ->
-      scriptEngine.eval(reader)
+      engine.eval(reader)
     }
   }
 }
