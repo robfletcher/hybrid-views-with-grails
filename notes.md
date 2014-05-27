@@ -1,12 +1,14 @@
 ## Handlebars plugin
 
 * Incompatible with *asset-pipeline*
+* It's just a wrapper round Handlebars-java
 
 ## Handlebars-java
 
 * Handlebars templates are not retained by *handlebars-asset-pipeline* after compilation
 * Not bundled into .war file
 * Could duplicate but that would defeat the point
+* JavaScript helpers *are* compatible
 
 ## Nashorn
 

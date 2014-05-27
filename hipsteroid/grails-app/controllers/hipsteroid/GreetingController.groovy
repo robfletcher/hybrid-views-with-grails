@@ -10,5 +10,4 @@ class GreetingController {
   def index() {
     render text: handlebarsService.render("greeting", [message: "o hai, world!"])
   }
-
 }
