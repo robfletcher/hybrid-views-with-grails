@@ -1,13 +1,18 @@
 package hipsteroid
 
-import grails.compiler.GrailsCompileStatic
+import grails.converters.JSON
 
-@GrailsCompileStatic
 class GreetingController {
 
-  HandlebarsService handlebarsService
-
   def index() {
-    render text: handlebarsService.render("greeting", [message: "o hai, world!"])
+    def model = [message: "o hai, world!"]
+    withFormat {
+      json {
+        render model as JSON
+      }
+      html {
+        render text: hbs.render(template: "greeting", model: model)
+      }
+    }
   }
 }

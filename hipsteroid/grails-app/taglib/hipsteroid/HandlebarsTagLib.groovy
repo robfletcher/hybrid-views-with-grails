@@ -5,7 +5,6 @@ import grails.compiler.GrailsCompileStatic
 import groovy.json.JsonBuilder
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.codehaus.groovy.grails.plugins.support.aware.GrailsApplicationAware
-import org.springframework.beans.factory.annotation.Autowired
 
 import javax.annotation.PostConstruct
 import javax.script.Invocable
@@ -18,11 +17,12 @@ import javax.script.ScriptEngineManager
  *
  * Internally this uses Nashorn to execute the Handlebars JavaScript.
  */
-class HandlebarsService implements GrailsApplicationAware {
+class HandlebarsTagLib implements GrailsApplicationAware {
 
-  @Autowired
+  static final namespace = "hbs"
+  static final defaultEncodeAs = [taglib: "none"]
+
   AssetResourceLocator assetResourceLocator
-
   GrailsApplication grailsApplication
 
   private ScriptEngine engine
@@ -30,17 +30,22 @@ class HandlebarsService implements GrailsApplicationAware {
 
   /**
    * Renders a named Handlebars template.
-   * @param template the template name which may be a path for nested
+   * Requires the attributes:
+   * <ul>
+   *   <li>{@code template} – the template name which may be a path for nested
    * templates. This is the same value you'd use to access the template under
    * <code>Handlebars.templates</code> in the browser.
-   * @param model the model to pass to the template.
-   * @return the rendered output.
+   * <li>{@code model} which is a map containing the view model.
+   * </ul>
    */
-  @GrailsCompileStatic
-  String render(String template, Map model) {
-    loadScript "${templatesRoot}/${template}.js"
-    def handlebarsTemplates = engine.eval("Handlebars.templates")
-    (engine as Invocable).invokeMethod(handlebarsTemplates, template, convertParameters(model))
+  def render = { attrs ->
+    if (!attrs.template) throwTagError("'template' attribute is required")
+    if (!attrs.model) throwTagError("'model' attribute is required")
+
+    loadScript "${templatesRoot}/${attrs.template}.js"
+
+    def templates = engine.eval("Handlebars.templates")
+    out << (engine as Invocable).invokeMethod(templates, attrs.template, convertParameters(attrs.model))
   }
 
   @GrailsCompileStatic
